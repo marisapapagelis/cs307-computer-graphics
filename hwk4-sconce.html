@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>CS 307 Hwk 4: Sconce</title>
+<style>
+      /* feel free to style the canvas any way you want. If you want it to
+      use the entire window, set width: 100% and height: 100%. */
+      
+      canvas {
+          display: block;
+          margin: 10px auto;
+          width: 80%;
+          height: 500px;
+      }
+      h1 {
+        color: darkgreen;
+      }
+      h3 {
+        color: darkblue;
+      }
+      body {
+        background-color: skyblue;
+        font-family: Arial, Helvetica, sans-serif;
+      }
+    </style>
+<script src="https://cs.wellesley.edu/~cs307/threejs/libs/three-r95.all.js">
+"https://cs.wellesley.edu/~cs307/threejs/libs/three-r80.min.js"
+</script>
+<!-- omit dat.gui and OrbitControls if you don't need them -->
+<script src="https://cs.wellesley.edu/~cs307/threejs/libs/OrbitControls-r95.js">
+"https://cs.wellesley.edu/~cs307/threejs/libs/OrbitControls-r80.js"
+</script>
+<script src="https://cs.wellesley.edu/~cs307/threejs/libs/dat.gui-r95.js">
+"https://cs.wellesley.edu/~cs307/threejs/libs/dat.gui-r80.min.js"
+</script>
+<script src="https://cs.wellesley.edu/~cs307/threejs/libs/tw-sp21.js">
+"https://cs.wellesley.edu/~cs307/threejs/libs/tw-fa18.js"
+</script>
+</head>
+<body>
+<h1>CS 307 Hwk 4: Sconce</h1>
+<h3>Marisa Papagelis</h3>
+<p>This scene uses three lights, directional, ambient, and spotlight. Toggle the GUI to turn each light on and off.</p>
+<p><b>Additional Features:</b> Add a texture pattern to the sphere or cones!! This can be done by simply uncommenting 
+specific lines within the code (83-85 for sphere and 104-106 for cones). More specific instructions are provided in the code documentation. </p>
+
+<script>
+
+// We always need a scene.
+var scene = new THREE.Scene();
+
+// ====================================================================
+
+// Create geometry of the scene 
+
+// Cube
+function createCube(){
+    /* creates mesh for cube with various wall colors and adds it to the scene */
+   var cubeGeometry = new THREE.BoxGeometry(100,100,100);
+   var colors = [0x45b1e8, // blue (wall)
+                    0x45b1e8, // blue
+                    0x2e8b57, // green (ceiling)
+                    0xdeb887, // tan (floor)
+                    0x45b1e8, // blue 
+                    0x45b1e8]; // blue
+   // create an array of 6 materials from these colors for the insides of the faces
+   var materials = [];
+   for (var i = 0; i < 6; i++)
+       materials.push(new THREE.MeshPhongMaterial({
+                                     color: colors[i],
+                                     side: THREE.BackSide} // only see inside of cube
+                                     ));
+   var cubeMaterial = new THREE.MeshFaceMaterial(materials);
+   var cubeMesh = new THREE.Mesh(cubeGeometry, cubeMaterial);
+   // add cube mesh to scene
+   scene.add(cubeMesh);
+}
+
+// Sphere 
+function createSphere() {
+   /* creates a sphere places it in the cube in the scene */
+   var sphereGeometry = new THREE.SphereGeometry(10,10,10);
+   var sphereMaterial = new THREE.MeshPhongMaterial({color: 0x9370db, // purple
+                                                     specular: 0x808080,  // grey
+                                                     // add texture option
+                                                     // ** UNCOMMENT LINES 83-85 TO GIVE
+                                                     // THE SPHERE TEXTURE **
+                                                    //  map: makeTexture(1, new THREE.Color(0x0000ff),
+                                                    // THREE.MirroredRepeatWrapping,
+                                                    // THREE.ClampToEdgeWrapping, 30, 2, false)
+                                                }); 
+   var sphereMesh = new THREE.Mesh(sphereGeometry, sphereMaterial);
+   // set position to be in back corner of the cube
+   sphereMesh.position.set(-35,-40,-35); 
+   // add sphere mesh to scene 
+   scene.add(sphereMesh);
+}
+
+// Cone 
+function createCone() {
+    /* creates a and returns a cone object to make sconce */
+   var cone = new THREE.Object3D();
+   var coneGeom = new THREE.ConeGeometry(5, 9, 4, 1, true);
+   var coneMat = new THREE.MeshPhongMaterial({color: 0xa9a9a9, // grey
+                                              specular: 0xd3d3d3, // grey different shade
+                                              side: THREE.DoubleSide, // see both sides of cone
+                                            // add texture option
+                                            // ** UNCOMMENT LINES 104-106 TO GIVE
+                                            // THE SPHERE TEXTURE **
+                                            //   map: makeTexture(1, new THREE.Color(0x0000ff),
+                                            //         THREE.MirroredRepeatWrapping,
+                                            //         THREE.ClampToEdgeWrapping, 30, 2, false)
+                                        });
+   var coneMesh = new THREE.Mesh(coneGeom, coneMat);
+   // set cone position
+   coneMesh.position.y = -4.25;
+   cone.add(coneMesh);
+   return cone;
+}
+
+// Sconce
+function createSconce() {
+   /* creates the sconce, made up of two cones, and adds to the scene */
+   // set position
+   var position = new THREE.Vector3(-43,0,-43)
+   // bottom cone 
+   var botCone = createCone();  
+   botCone.position.copy(position);
+   scene.add(botCone);
+   // bottom cone spotlight
+   botSpot = spotlight(position, new THREE.Vector3(0,-1,0));  
+   scene.add(botSpot);
+   scene.add(botSpot.target); 
+   // top cone
+   var topCone = createCone();
+   topCone.position.copy(position);
+   // rotate position 180 degrees along x-axis
+   topCone.rotation.x = TW.degrees2radians(180);
+   scene.add(topCone);
+   // top cone spotlight
+   topSpot = spotlight(position, new THREE.Vector3(0,1,0)); // rotate 180 around y
+   scene.add(topSpot);
+   scene.add(topSpot.target);  
+}
+
+// ================================================================
+
+// Lighting options
+
+// Spotlight function (used in createSconce())
+function spotlight (position, direction) {
+    /* creates and returns a spotlight */
+   var spotlight = new THREE.SpotLight(0xffffff, 1, 0, TW.degrees2radians(37));
+   // set spotlight position
+   spotlight.position.copy(position);
+   spotlight.target.position.set(position.x + direction.x,
+                            position.y + direction.y,
+                            position.z + direction.z);
+   return spotlight;
+}
+
+// Directional light
+var directional = new THREE.DirectionalLight(0xffffff, 0.75);
+directional.position.set(0.5, 1.5, 2); // directional position
+scene.add(directional);
+
+
+// Ambient Light
+var ambient = new THREE.AmbientLight(0x808080);
+scene.add(ambient);
+
+// store scene parameters in an object, to enable GUI control
+
+var params = {
+      ambientOn: true,
+      directionalOn: true,
+      spotlightOn: true
+};           
+
+// add cube, sconce, and sphere to the scene 
+
+createCube();
+createSconce();
+createSphere();
+
+// ================================================================
+
+// We always need a renderer
+
+var renderer = new THREE.WebGLRenderer();
+
+TW.mainInit(renderer,scene);
+
+// We always need a camera
+
+TW.cameraSetup(renderer,scene,
+                {minx: -50, maxx: 50,
+                 miny: -50, maxy: 50,
+                 minz: -50, maxz: 50});
+
+
+// Add GUI buttons
+
+var gui = new dat.GUI();
+
+// ambientOn 
+gui.add(params,'ambientOn').onChange(function () {
+                                ambient.visible = params.ambientOn;
+                                TW.render();
+                              });
+
+// directionalOn
+gui.add(params,'directionalOn').onChange(function () {
+                                directional.visible = params.directionalOn;
+                                TW.render();
+                              });
+
+// spotlightOn
+var botSpot;
+var topSpot;
+
+gui.add(params,'spotlightOn').onChange(function () {
+                                botSpot.visible = params.spotlightOn;
+                                topSpot.visible = params.spotlightOn;
+                                TW.render();
+                              });
+
+// ================================================================
+
+// Additional Features
+
+// Add texture pattern as an option for the sphere or cones 
+
+function makeTexture () {
+    // create an array of colors to use for the texture
+    var data = new Uint8Array(3*4*4);
+    var i, j, n=0;
+    for (i = 0; i < 4; ++i) {
+       for (j = 0; j < 4; ++j) {
+          data[n++] = 0;
+          data[n++] = i*84;
+          data[n++] = j*84;
+       }
+    }
+
+    // create a new texture object from the data array
+    var textureObj = new THREE.DataTexture(data, 4, 4, THREE.RGBFormat);
+                       
+    // when mapping the texture onto a face in the Geometry, use the nearest 
+    // texture pixel as the color to be rendered
+    textureObj.minFilter = THREE.NearestFilter;
+    textureObj.magFilter = THREE.NearestFilter;
+    textureObj.needsUpdate = true;
+
+    return textureObj;     
+};
+
+</script>
+</p></body>
+</html>

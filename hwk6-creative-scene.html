@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>Fish Tank Races</title>
+<style>
+      /* feel free to style the canvas any way you want. If you want it to
+      use the entire window, set width: 100% and height: 100%. */
+      
+      canvas {
+          display: block;
+          margin: 10px auto;
+          width: 80%;
+          height: 500px;
+      }
+      h1 {
+        color: darkblue;
+      }
+      h3 {
+        color: darkgreen;
+      }
+      body {
+        background-color: skyblue;
+        font-family: Arial, Helvetica, sans-serif;
+      }
+    </style>
+<script src="https://cs.wellesley.edu/~cs307/threejs/libs/three-r95.all.js">
+"https://cs.wellesley.edu/~cs307/threejs/libs/three-r80.min.js"
+</script>
+<!-- omit dat.gui and OrbitControls if you don't need them -->
+<script src="https://cs.wellesley.edu/~cs307/threejs/libs/OrbitControls-r95.js">
+"https://cs.wellesley.edu/~cs307/threejs/libs/OrbitControls-r80.js"
+</script>
+<script src="https://cs.wellesley.edu/~cs307/threejs/libs/dat.gui-r95.js">
+"https://cs.wellesley.edu/~cs307/threejs/libs/dat.gui-r80.min.js"
+</script>
+<script src="https://cs.wellesley.edu/~cs307/threejs/libs/tw-sp21.js">
+"https://cs.wellesley.edu/~cs307/threejs/libs/tw-fa18.js"
+</script>
+<script src="https://cs.wellesley.edu/~cs307/lectures-s21/TubeGeometryNew.js"></script>
+<script src="https://cs.wellesley.edu/~cs307/lectures-s21/TubeRadialGeometry.js"></script>
+</head>
+<body>
+<h1>Fish Tank Races</h1>
+<h3>Marisa Papagelis, CS 307 Final Project</h3>
+<p></p>
+<p><b>Next Steps</b><p>
+<p>The goal of my final project is to create an interactive three player game called Fish Tank Races. For this game, 
+    players will be assigned a certain key on the keyboard that moves their fish foreward. Players will be able to play the 
+    game by trying to be the first one to get their fish over the finish line. The fish tank will also have additional user interaction 
+    features such as the ability to click on the scene and feed the fish. The fish tank might show a congratulatory animation once the 
+    first fish passes through the finish line. 
+</p>
+<p>While this assignment shows the static scene of my fish tank with texture mapping, curved lines, and lighting,
+     I anticipate adding many more graphics concepts to the final project including:</p>
+<p><b>User Interaction:</b> I want to create a three player game where players can press keys on the keyboard to move their respective fish forward. The
+    first fish to cross the finish line wins!</p>
+<p><b>Camera Angles:</b> I want to create various camera angles that the user can activate (similar to the town views). Users can switch views to play 
+    the race from different viewing angles (i.e. normal, straight on, top view, etc.).</p>
+<p><b>Animation:</b> I want to have an celebratory animation once the first fish passes through the finish line.</p>
+<script>
+
+// We always need a scene.
+var scene = new THREE.Scene(); 
+
+// Create Geometry of the scene
+
+// ====================================================================
+
+// Fish Tank with Textures 
+
+function displayPanels (textures) {
+// set up a pattern of repetition for the three input textures, using a 
+// different wrapping method for each one and varying the number of repeats
+var wrapStyle = [THREE.RepeatWrapping, THREE.MirroredRepeatWrapping];
+for (var i = 0; i < 3; i++) {
+   textures[i].wrapS = wrapStyle[i];
+   textures[i].wrapT = wrapStyle[i];
+   if (i == 2) {
+       textures[i].repeat.set(2,2);
+   } else {
+       textures[i].repeat.set(3,3);
+   }
+   textures[i].needsUpdate = true;
+} 
+
+    // create tank with a water texture 
+   var tankGeometry = new THREE.BoxGeometry(200,100,100);
+   var tankMat = new THREE.MeshBasicMaterial( {color: 0xffffff,
+    side: THREE.BackSide,
+                                                 map: textures[0]},
+                                                  );
+   var tankMesh = new THREE.Mesh(tankGeometry, tankMat);
+   // add tank mesh to scene
+   scene.add(tankMesh);
+
+    // create a plane with a sand texture to place on the bottom of the tank
+    var planeGeom = new THREE.PlaneGeometry(200,100);
+    var planeMat = new THREE.MeshBasicMaterial( {color: 0xffffff,
+                                                  map: textures[1]} );
+    var planeMeshL = new THREE.Mesh(planeGeom, planeMat);
+    planeMeshL.position.set(0, -49.99, 0); // place right at the bottom of the tank
+    planeMeshL.rotation.set(-Math.PI/2, 0,0);
+    scene.add(planeMeshL);
+
+    // create a plane with a balloon texture to place on the wall next to the finish line
+    var planeGeom1 = new THREE.PlaneGeometry(100,100);
+    var planeMat1 = new THREE.MeshBasicMaterial( {color: 0xffffff,
+                                                  map: textures[2]} );
+    var planeMeshL1 = new THREE.Mesh(planeGeom1, planeMat1);
+    planeMeshL1.position.set(99.99, 0, 0); // place right on the wall next to the finish line
+    planeMeshL1.rotation.set(0, -Math.PI/2,-Math.PI/2);
+    scene.add(planeMeshL1);
+
+   TW.render();
+}
+
+// ====================================================================
+
+// Function to create a fish
+function createFish() {
+   /* creates a fish out of a sphere and cone and places it in the tank */
+   var fish = new THREE.Object3D();
+
+   // create a sphere to be the head
+   var sphereGeometry = new THREE.SphereGeometry(10,10,10);
+   var sphereMaterial = new THREE.MeshPhongMaterial({color: 0xFFA500, // orange
+                                                     specular: 0x808080,  // grey
+                                                }); 
+   var sphereMesh = new THREE.Mesh(sphereGeometry, sphereMaterial);
+   fish.add(sphereMesh);
+
+   // create and add left and right eyes to the head
+	var eyeGeometry = new THREE.SphereGeometry(2, 2, 2);
+    var eyeMaterial = new THREE.MeshPhongMaterial({color: 0x000000, // black
+                                                     specular: 0x808080,  // grey
+                                                }); 
+    var eyeMeshL = new THREE.Mesh(eyeGeometry, eyeMaterial);
+    var eyeMeshR = eyeMeshL.clone();
+    eyeMeshL.position.set(5, 3, 8.5);
+	eyeMeshR.position.set(5,3,-8.5);
+    fish.add(eyeMeshL);
+    fish.add(eyeMeshR);
+
+    // create and add a mouth to the head
+    var mouthGeometry = new THREE.TorusGeometry(2, 0.5, 10, 10, 5*Math.PI/6);
+    var mouthMaterial = new THREE.MeshPhongMaterial({color: 0x000000, // black
+                                                     specular: 0x808080,  // grey
+                                                }); 
+	var mouthMesh = new THREE.Mesh(mouthGeometry, mouthMaterial);
+    mouthMesh.position.set(8.5,0,0);
+	mouthMesh.rotation.set(Math.PI/2,0,-Math.PI/2);
+    fish.add(mouthMesh);
+
+   // create a cone to be the tail 
+   var coneGeometry = new THREE.ConeGeometry(10, 9, 6, 1, true);
+   var coneMaterial = new THREE.MeshPhongMaterial({color: 0xFFA500, // orange
+                                                     specular: 0x808080,
+                                                     side: THREE.DoubleSide, // grey
+                                                }); 
+    var coneMesh = new THREE.Mesh(coneGeometry, coneMaterial);
+    // position tail at the back of the head
+    coneMesh.position.set(-12,0,0)
+    coneMesh.rotation.set(0,0,-Math.PI/2)
+    fish.add(coneMesh)
+
+// create some bubbles for the fish made from spheres
+   var sphereGeometry1 = new THREE.SphereGeometry(2,2,2);
+   var sphereMaterial1 = new THREE.MeshPhongMaterial({color: 0xE0FFFF, // light blue
+                                                     specular: 0x808080,  // grey
+                                                }); 
+   var sphereMesh1 = new THREE.Mesh(sphereGeometry1, sphereMaterial1);
+    // position bubble
+    sphereMesh1.position.set(10,10,0)
+   fish.add(sphereMesh1);
+
+    // create two more bubbles and position them accordingly
+    var sphereMesh2 = sphereMesh1.clone();
+    sphereMesh2.scale.set(1.5,1.5,1.5)
+    sphereMesh2.position.set(13,17,0);
+    fish.add(sphereMesh2);
+    
+    var sphereMesh3 = sphereMesh1.clone();
+    sphereMesh3.scale.set(2,2,2)
+    sphereMesh3.position.set(15,25,0);
+    fish.add(sphereMesh3);
+
+   
+
+   return fish;
+}
+
+// create fish and add to scene
+var fish = createFish();
+fish.position.set(-85,30,30); 
+fish.scale.set(0.75,0.75,0.75); 
+scene.add(fish);
+
+// create two more fish to add to the scene, positioning accordingly 
+var fish2 = createFish();
+fish2.position.set(-85,0,0); 
+fish2.scale.set(0.75,0.75,0.75); 
+scene.add(fish2); 
+
+var fish3 = createFish();
+fish3.position.set(-85,-30,-30); 
+fish3.scale.set(0.75,0.75,0.75); 
+scene.add(fish3); 
+
+// ====================================================================
+
+// create a finish line using a bezier curve
+var bezierCurve = new THREE.CubicBezierCurve3(
+   new THREE.Vector3(-50,0,0), 
+   new THREE.Vector3(-20,50,0),
+   new THREE.Vector3(20,50,0),
+   new THREE.Vector3(50,0,0)
+);
+// create a pattern of radii that increase and then decrease in size
+var radii = [3,2,1,1,1,0.5,1,1,1,2,3];
+// create the tube geometry using the Bezier curve and radii
+var geom = new THREE.TubeRadialGeometry(bezierCurve, 32, radii, 16, false);
+var mat = new THREE.MeshPhongMaterial({color: 0xFF0000, // red
+                                                     specular: 0x808080,  // grey
+                                                }); 
+mat.side = THREE.DoubleSide;
+var finishLine = new THREE.Mesh(geom, mat);
+// position finish line and add to the scene
+finishLine.position.set(90,25,0)
+finishLine.rotation.set(Math.PI,Math.PI/2,0)
+scene.add(finishLine);
+
+// ====================================================================
+
+// function to create a seaweed bunch from bezier curves
+function createSeaweed() {
+var seaweed = new THREE.Object3D();
+var controlPoints = [ [0,0,0],
+                      [2,2,0],
+                      [-2,1,0],
+                      [0,3,0] ];
+var curveGeom = TW.createBezierCurve(controlPoints,20);
+var curveMat = new THREE.LineBasicMaterial( { color: THREE.ColorKeywords.green,
+                                              linewidth: 30 } );
+var curve = new THREE.Line( curveGeom, curveMat );
+curve.scale.set(6,6,6)
+curve.position.set(0,-50,50)
+seaweed.add(curve);
+
+var curve2 = curve.clone();
+curve2.position.set(0, -50, 50);
+curve2.rotation.set(0,0,Math.PI/8)
+seaweed.add(curve2);
+
+var curve3 = curve.clone();
+curve3.position.set(0, -50, 50);
+curve3.rotation.set(0,0,Math.PI/4)
+seaweed.add(curve3);
+
+var curve4 = curve.clone();
+curve4.position.set(0, -50, 50);
+curve4.rotation.set(0,0,-Math.PI/8)
+seaweed.add(curve4);
+
+var curve5 = curve.clone();
+curve5.position.set(0, -50, 50);
+curve5.rotation.set(0,0,-Math.PI/4)
+seaweed.add(curve5);
+
+return seaweed;
+}
+
+// create seaweed and add to scene
+var seaweed = createSeaweed();
+scene.add(seaweed);
+
+var seaweed2 = createSeaweed();
+seaweed2.position.set(-70,0,-40); 
+scene.add(seaweed2);
+
+var seaweed3 = createSeaweed();
+seaweed3.position.set(80,0,-30); 
+scene.add(seaweed3);
+
+var seaweed3 = createSeaweed();
+seaweed3.position.set(20,0,-70); 
+scene.add(seaweed3);
+
+// ====================================================================
+
+// function to create a pile of rocks from spheres 
+function createRocks() { 
+var rocks = new THREE.Object3D();
+
+// create a sphere 
+var sphereGeometry = new THREE.SphereGeometry(5,5,5);
+   var sphereMaterial = new THREE.MeshPhongMaterial({color: 0x808080, // grey
+                                                }); 
+   var rock = new THREE.Mesh(sphereGeometry, sphereMaterial);
+   rock.position.set(0,-45,0)
+   rocks.add(rock);
+    
+   var rock1 = rock.clone();
+rock1.position.set(-8,-46, 0);
+rocks.add(rock1);
+
+var rock2 = rock.clone();
+rock2.position.set(-4,-39,-5);
+rocks.add(rock2)
+
+var rock3 = rock.clone();
+rock3.position.set(-4,-46,-8);
+rocks.add(rock3)
+
+return rocks;
+                                            }
+// create rock piles and add to scene, positioning accordingly
+var rock = createRocks();
+scene.add(rock);  
+
+var rock2 = createRocks();
+rock2.position.set(-40,0,-35)
+scene.add(rock2);
+
+var rock3 = createRocks();
+rock3.position.set(65,0,-35)
+scene.add(rock3);
+
+// ================================================================
+
+// Lighting
+
+// Directional light
+var directional = new THREE.DirectionalLight(0xffffff, 0.75);
+directional.position.set(10, 20, 20); // directional position
+scene.add(directional);
+
+// Ambient Light
+var ambient = new THREE.AmbientLight(0x808080);
+scene.add(ambient); 
+
+// ================================================================
+
+// Texture Mapping
+
+// load textures for texture mapping
+TW.loadTextures(["images/water.jpg", "images/sand.jpg", "images/balloons.jpg"],
+            function (textures) {
+                displayPanels(textures);
+            } );
+
+// ================================================================
+
+// We always need a renderer
+
+var renderer = new THREE.WebGLRenderer();
+
+TW.mainInit(renderer,scene);
+
+// We always need a camera
+
+TW.cameraSetup(renderer,scene,
+                {minx: -100, maxx: 100,
+                 miny: -50, maxy: 50,
+                 minz: -50, maxz: 50});
+
+// ================================================================
+
+
+</script>
+</p></body>
+</html>

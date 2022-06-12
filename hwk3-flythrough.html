@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+    <title>CS 307 Hwk 3: Coming in for a Landing</title>
+    <style>
+      canvas {
+          display: block;
+          margin: 10px auto;
+          width: 800px;
+          height: 500px;
+      }
+      h1 {
+        color: darkgreen;
+      }
+      p {
+        color: darkblue;
+      }
+      body {
+        background-color: skyblue;
+        font-family: Arial, Helvetica, sans-serif;
+      }
+    </style>
+<script src="https://cs.wellesley.edu/~cs307/threejs/libs/three-r95.all.js">
+"https://cs.wellesley.edu/~cs307/threejs/libs/three-r80.min.js"
+</script>
+<script src="https://cs.wellesley.edu/~cs307/threejs/libs/OrbitControls-r95.js">
+"https://cs.wellesley.edu/~cs307/threejs/libs/OrbitControls.js"
+</script>
+<script src="https://cs.wellesley.edu/~cs307/threejs/libs/tw-sp21.js">
+"https://cs.wellesley.edu/~cs307/threejs/libs/tw-fa18.js"
+</script>
+
+  </head>
+
+<body>
+  <h1>CS 307 Hwk 3: Coming in for a Landing</h1>
+  <h3> Marisa Papagelis </h3>
+  <p>
+    Press "n" to increment the camera position and "fly through" the town frame-by-frame. 
+    <p>
+      <p>
+        <b>Additional Features: </b>Press "m" to decrement the camera position and fly away from the town <b>backwards</b> frame-by-frame. 
+        <p>   
+<h2 id="frameNum">Frame 0</h2>
+
+<script>
+
+// create a scene with a barn, 3 fences, and ground
+
+function makeBarnScene () {
+   // create three fences and add them to the scene
+   fence1 = makeFence(40);
+   fence1.translateX(5);
+   fence2 = fence1.clone();
+   fence2.translateZ(-10);
+   fence3 = makeFence(100);
+   fence3.translateX(9.2);
+   fence3.rotation.y = Math.PI/2;
+   scene.add(fence1);
+   scene.add(fence2);
+   scene.add(fence3);
+   // create a barn and add it to the scene
+   var barn = new TW.createMesh(TW.createBarn(5,5,10));
+   scene.add(barn);
+   // create the ground plane and add it to the scene
+   var gc = THREE.ColorKeywords.darkgreen;
+   var ground = new THREE.Mesh(new THREE.PlaneGeometry(20,20),
+                               new THREE.MeshBasicMaterial( {color: gc}));
+   ground.rotation.x = -Math.PI/2;
+   scene.add(ground);
+}
+
+function makeFence(numPickets) {
+    // makes a fence with the left end at the origin and proceeding
+    // down the x axis. The pickets are made from barn objects, scaled
+    // to be unit height (at the shoulder) and very thin 
+    var fence = new THREE.Object3D();
+    var picketG = TW.createBarn(.09, 1, 0.1);
+    var picket = new THREE.Mesh(picketG, new THREE.MeshNormalMaterial());
+    for ( var i = 0; i < numPickets; ++i ) {
+        picket = picket.clone();
+        picket.translateX(0.1);
+        fence.add(picket);
+    }
+    return fence;
+}
+
+// create a scene object
+var scene = new THREE.Scene();
+
+// add the barn scene                         
+makeBarnScene();  
+
+// ----------------------------------------------------------------
+
+// create a renderer 
+var renderer = new THREE.WebGLRenderer();
+
+// create a rendering object
+function render() {
+    // assume global variables scene, renderer, and camera
+    renderer.render(scene,camera);
+}
+
+// starting point coordinates from initial distant point in sky
+var eyeX = 0; 
+var eyeY = 55;
+var eyeZ = 55;
+
+// initial "lookAt" point for Y coordinate to increase from
+var atY = 0; 
+
+// set integers that Y and Z coordinates will change by each frame
+var yChange = -5;
+var zChange = -4;
+
+// the Y coordinate of the lookAt point will increase by 1 with each new frame
+var atYChange = 1;
+
+// create an initial camera with the desired shape
+// field-of-view of 90 degrees, aspect ratio (800/500)
+var camera = new THREE.PerspectiveCamera(90, 800/500, 1, 1000);
+// set the camera location and orientation
+camera.position.set(eyeX, eyeY, eyeZ);
+// set "up vector" to (0,1,0)
+camera.up.set(0,1,0); 
+camera.lookAt(new THREE.Vector3(0,atY,0));
+
+// add camera to the scene
+scene.add(camera);
+
+TW.mainInit(renderer,scene);
+
+render();
+
+// create function to allow the user to fly through the scene
+
+var frameNum = 0; // set frameNum to 0 for iteration 
+
+function flyThrough() {
+    /* iterates through frames, changing the camera position by one frame each time */
+    frameNum += 1;
+    // if frame reaches 11, loop and start over 
+    if (frameNum == 11) {    
+       frameNum = 0;
+    }
+    // concatenate frame name
+    document.getElementById('frameNum').innerHTML= "Frame " + frameNum;
+    // increment camera position by set integers
+    camera.position.set(0, eyeY + frameNum * yChange, eyeZ + frameNum * zChange);
+    // increment the Y coordinate of the lookAt point 
+    camera.lookAt(new THREE.Vector3(0, atY + frameNum * atYChange, 0));
+    render();
+}
+
+// implement keyboard callback, calling flyThrough() function
+TW.setKeyboardCallback( "n", flyThrough, "show next frame");
+
+// Additional Features
+
+// create function to allow the user to fly away from the scene
+
+function flyBack() {
+     /* iterates through frames, changing the camera position by one frame each time */
+    frameNum -= 1;
+    // if frame reaches 0, loop and start over 
+    // if frame starts at 0, camera will fly backwards indefinitely
+    if (frameNum == 0) {
+        frameNum = 10;
+    }
+    // concatenate frame name
+    document.getElementById('frameNum').innerHTML="Frame " + frameNum;
+    // decrement camera position by set integers
+    camera.position.set(0, eyeY + frameNum * yChange, eyeZ + frameNum * zChange);
+    // decrement the Y coordinate of the lookAt point 
+    camera.lookAt(new THREE.Vector3(0, atY + frameNum * atYChange, 0));
+    render();
+}
+
+// implement keyboard callback, calling flyBack() function
+TW.setKeyboardCallback("m", flyBack, "show past frame");
+
+</script>
+</body>
+</html>

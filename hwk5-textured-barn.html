@@ -1,0 +1,218 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>Textured Barn</title>
+<style>
+      /* feel free to style the canvas any way you want. If you want it to
+      use the entire window, set width: 100% and height: 100%. */
+      canvas {
+          display: block;
+          margin: 10px auto;
+          width: 80%;
+          height: 500px;
+      }
+      h1 {
+        color: darkblue;
+      }
+      h3 {
+        color: purple;
+      }
+      body {
+        background-color: lightyellow;
+        font-family: Arial, Helvetica, sans-serif;
+      }
+</style>
+
+<script src="https://cs.wellesley.edu/~cs307/threejs/libs/three-r95.all.js">
+"https://cs.wellesley.edu/~cs307/threejs/libs/three-r80.min.js"
+</script>
+<script src="https://cs.wellesley.edu/~cs307/threejs/libs/OrbitControls-r95.js">
+"https://cs.wellesley.edu/~cs307/threejs/libs/OrbitControls.js"
+</script>
+<script src="https://cs.wellesley.edu/~cs307/threejs/libs/tw-sp21.js">
+"https://cs.wellesley.edu/~cs307/threejs/libs/tw-fa18.js"
+</script>
+<script src="https://cs.wellesley.edu/~cs307/threejs/libs/dat.gui-r95.js">
+"https://cs.wellesley.edu/~cs307/threejs/libs/dat.gui.min.js"
+</script>
+
+</head>
+
+<body>
+<h1>CS 307 Hwk 5: Textured Barn</h1>
+<h3>Marisa Papagelis</h3>
+<p>Use the GUI control in the right top corner to flip between the basic grayscale barn ('showLighting') 
+    and the textured barn ('showResult').
+</p>
+<p><b>Additional Features:</b> Use the same GUI control to turn the barn into an igloo ('showIgloo').</p>
+
+
+<script>
+// global parameters for barn 
+
+var params = {
+   barnWidth: 20,
+   barnHeight: 10,
+   barnDepth: 50,
+   mode: "showLighting", // starting state 
+};
+
+var barnMesh;
+
+// creating the scene, renderer, and camera
+var scene = new THREE.Scene();
+
+var renderer = new THREE.WebGLRenderer();
+
+TW.mainInit(renderer, scene);
+
+TW.cameraSetup(renderer, scene,
+	{
+		minx: 0, maxx: params.barnWidth,
+		miny: 0, maxy: params.barnHeight,
+		minz: -params.barnDepth, maxz: 0
+	});
+
+// adds texture coordinates to all the barn vertices
+function addTextureCoords (barnGeom) {
+    if( ! barnGeom instanceof THREE.Geometry ) {
+        throw "not a THREE.Geometry: "+barnGeom;
+    }
+    // array of face descriptors
+    var UVs = [];
+    function faceCoords(as,at, bs,bt, cs,ct) {
+        UVs.push( [ new THREE.Vector2(as,at),
+                    new THREE.Vector2(bs,bt),
+                    new THREE.Vector2(cs,ct)] );
+    }
+    // front (faces 0-2)
+    faceCoords(0,0, 1,0, 1,1);
+    faceCoords(0,0, 1,1, 0,1);
+    faceCoords(0,1, 1,1, 0.5,2);  // upper triangle
+    // back (faces 3-5)
+    faceCoords(1,0, 0,1, 0,0);
+    faceCoords(1,0, 1,1, 0,1);
+    faceCoords(0,1, 1,1, 0.5,2);  // upper triangle
+    // roof (faces 6-9)
+    faceCoords(3,0, 3,1, 0,0);
+    faceCoords(3,1, 0,1, 0,0);
+    faceCoords(0,0, 3,0, 3,1);
+    faceCoords(0,1, 0,0, 3,1);
+    // sides (faces 10-13)
+    faceCoords(5,0, 0,1, 0,0);
+    faceCoords(5,1, 0,1, 5,0);
+    faceCoords(5,0, 5,1, 0,0);
+    faceCoords(5,1, 0,1, 0,0);
+    // floor (faces 14-15)
+    faceCoords(0,0, 5,0, 0,2);
+    faceCoords(5,0, 5,2, 0,2);
+
+    // attach this to the geometry
+    barnGeom.faceVertexUvs = [ UVs ];
+}
+
+// makes a minimal grayscale barn and adds it to the scene
+function makeBasicBarn () {
+    var barnGeom = TW.createBarn(params.barnWidth, params.barnHeight, params.barnDepth);
+    var barnMat = new THREE.MeshPhongMaterial({color: 0xdddddd});
+    barnMesh = new THREE.Mesh(barnGeom, barnMat);
+    scene.add(barnMesh);
+}
+
+// create ambient light and add to the scene
+
+var ambLight = new THREE.AmbientLight(0x808080);
+scene.add(ambLight);
+
+// create directional light and add to the scene 
+
+var dirLight = new THREE.DirectionalLight(0xffffff, 0.5);
+dirLight.position.set(1, 2, 3); // directional position
+scene.add(dirLight);
+
+// create a function to show only basic grayscale barn (show lighting)
+function showLighting() {
+    scene.remove(barnMesh); // remove current barn mesh
+    makeBasicBarn();
+    TW.render();
+}
+
+// create a function to show textured barn (show result)
+function showResult(textures) {
+    scene.remove(barnMesh); // remove current barn mesh
+    // create new barn with textures
+    var barnGeom = TW.createBarn(params.barnWidth, params.barnHeight, params.barnDepth);
+    textures[0].wrapS = THREE.RepeatWrapping;
+	textures[0].wrapT = THREE.RepeatWrapping;
+	textures[0].repeat.set(2, 2);
+	textures[0].needsUpdate = true; // repeated texture
+	textures[1].wrapS = THREE.RepeatWrapping;
+	textures[1].wrapT = THREE.RepeatWrapping;
+	textures[1].repeat.set(2, 2);
+	textures[1].needsUpdate = true; // repeated texture
+
+    // set side and roof material
+    var sideMaterial = new THREE.MeshPhongMaterial({
+		map: textures[0], // denotes side texture
+        color: 0xffffff
+	});
+	var roofMaterial = new THREE.MeshPhongMaterial({
+		map: textures[1], // denotes roof texture
+        color: 0xffffff
+	});
+
+    // create array of materials
+    var materials = [sideMaterial, roofMaterial];
+	addTextureCoords(barnGeom, textures);
+	barnMesh = new THREE.Mesh(barnGeom, materials);
+
+    // side material
+    TW.setMaterialForFaces(barnGeom, 0, 0, 1, 2, 3, 4, 5, 10, 11, 12, 13, 14, 15);
+    // roof material
+	TW.setMaterialForFaces(barnGeom, 1, 6, 7, 8, 9);
+
+    // add barnMesh to scene
+	scene.add(barnMesh);
+	TW.render();
+}
+
+// set initial scene to only lighting setting
+showLighting();
+
+// set scene params to initial states
+var sceneParams = {
+	showLighting: true,
+	showResult: false,
+}
+
+// create GUI with three modes
+var gui = new dat.GUI();
+gui.add(params, 'mode', ['showLighting', 'showResult', 'showIgloo']).onChange(redoScene);
+
+// function to redo scene between three modes 
+function redoScene() {
+    // if mode is showLighting, call showLighting()
+	if (params.mode == "showLighting") {
+		showLighting();
+    // Additional Feature - Turn barn into an igloo
+    // if mode is showIgloo, call function showIgloo() to turn into igloo
+    } else if (params.mode == "showIgloo") {
+        // load igloo textures but call showResult() function
+        TW.loadTextures(["images/igloo.jpg", "images/igloo.jpg"],
+			function (textures) {
+				showResult(textures); })
+    // otherwise, mode is showResult, call function showResult() with input textures
+	} else {
+        // load textures
+		TW.loadTextures(["images/brick.jpg", "images/roof.jpg"],
+			function (textures) {
+				showResult(textures);
+			});
+	}
+}
+
+</script>
+</body>
+</html>

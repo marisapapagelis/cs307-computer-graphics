@@ -1,0 +1,286 @@
+<html>
+  <head>
+    <title>Winter Town</title>
+    <style>
+      /* feel free to style the canvas any way you want. If you want it to
+      use the entire window, set width: 100% and height: 100%. */
+      canvas {
+          display: block;
+          margin: 10px;
+          width: 800px;
+          height: 500px
+      }
+      h1 {
+        color: lightcyan;
+      }
+      h2 {
+        color: lightcyan; 
+      }
+      p {
+        color: darkblue;
+      }
+      body {
+        background-color: rgb(203, 170, 233);
+        font-family: Arial, Helvetica, sans-serif;
+      }
+    </style>
+    <script src="https://cs.wellesley.edu/~cs307/threejs/libs/three.min.js"></script>
+    <script src="https://cs.wellesley.edu/~cs307/threejs/libs/tw.js"></script>
+    <script src="https://cs.wellesley.edu/~cs307/threejs/libs/OrbitControls.js"></script>
+    <script src="https://cs.wellesley.edu/~cs307/threejs/libs/dat.gui.min.js"></script>
+  </head>
+<body>
+    <h1>CS 307 Hwk 3: Winter Town</h1>
+    <h3> Marisa Papagelis </h3>
+    <p>Use the keyboard controls 1, 2, and 3 to view the town from three preset camera angles.</p>
+    <p><b>Additional Features:</b> experiment with two additional town views I created using the keyboard controls 4 and 5.</p>
+<h2 id="view">Winter Town View</h2>
+
+<script>
+var scene = new THREE.Scene();
+
+// used for tree trunk and sign
+
+var brownMat = new THREE.MeshBasicMaterial({color: THREE.ColorKeywords.brown});
+
+// createTree() creates and returns a THREE.Object3D that is an instance of a tree, 
+// with its origin at the center of the base of the trunk, and adds it to the scene
+
+function createTree (trunkRadius, trunkHeight, coneRadius, coneHeight) {
+    var tree = new THREE.Object3D();
+    var cone = new THREE.Mesh(new THREE.ConeGeometry(coneRadius,coneHeight),
+                              new THREE.MeshBasicMaterial({color: THREE.ColorKeywords.darkgreen}));
+    cone.position.y = coneHeight/2+trunkHeight;
+    tree.add(cone);
+    var trunk = new THREE.Mesh(new THREE.CylinderGeometry(trunkRadius,trunkRadius,trunkHeight),
+                               brownMat); 
+    trunk.position.y = trunkHeight/2;
+    tree.add(trunk);
+    return tree;
+}
+
+// createSnowperson() creates and returns a THREE.Object3D that is an instance of a snowperson, 
+// with its origin at the center of its base, and adds it to the scene
+
+function createSnowperson (radiusBot) {
+   var snowPerson = new THREE.Object3D();
+   var radiusMid = 0.8*radiusBot;
+   var radiusTop = 0.6*radiusMid;
+   var snow = new THREE.MeshBasicMaterial({color: 0xeeeeee});
+   var snowBot = new THREE.Mesh(new THREE.SphereGeometry(radiusBot), snow);
+   var snowMid = new THREE.Mesh(new THREE.SphereGeometry(radiusMid), snow);
+   var snowTop = new THREE.Mesh(new THREE.SphereGeometry(radiusTop), snow);
+   snowBot.position.y = radiusBot;
+   snowMid.position.y = 2*radiusBot + radiusMid;
+   snowTop.position.y = 2*radiusBot + 2*radiusMid + radiusTop;
+   snowPerson.add(snowBot);
+   snowPerson.add(snowMid);
+   snowPerson.add(snowTop);
+   return snowPerson;
+}
+
+// add three houses (solid color barns) to the scene
+
+var house1 = TW.createBarnSolidColor(2,3,3,0xff0000);
+house1.position.set(-7,0,4);
+scene.add(house1);
+
+var house2 = TW.createBarnSolidColor(2,3,3,0x00ff00);
+house2.position.set(-1,0,-4);
+scene.add(house2);
+
+var house3 = TW.createBarnSolidColor(2,3,3,0x0000ff);
+house3.position.set(5,0,3);
+scene.add(house3);
+
+// add three trees to the scene
+
+var tree1 = createTree(0.1,0.5,1,4);
+tree1.position.set(-5,0,-3);
+scene.add(tree1);
+
+var tree2 = createTree(0.15,0.8,1.5,5);
+tree2.position.set(6,0,-2);
+scene.add(tree2);
+
+var tree3 = createTree(0.2,1,1,4);
+tree3.position.set(2,0,5);
+scene.add(tree3);
+
+// add three snowpeople to the scene
+
+var snow1 = createSnowperson(0.6);
+snow1.position.set(4,0,3);
+scene.add(snow1);
+
+var snow2 = createSnowperson(0.5);
+snow2.position.set(0.5,0,3);
+scene.add(snow2);
+
+var snow3 = createSnowperson(0.4);
+snow3.position.set(-5,0,6);
+scene.add(snow3);
+
+// add a brown sign to the scene
+
+var sign = new THREE.Mesh(new THREE.BoxGeometry(4,1,1), brownMat);
+sign.position.set(-2,2,0);
+scene.add(sign);
+var signPost = new THREE.Mesh(new THREE.BoxGeometry(0.5,2,0.5), brownMat);
+signPost.position.set(-2,1,0);
+scene.add(signPost);
+
+// add a flat ground with snow
+
+var circle = new THREE.Mesh(new THREE.CircleGeometry(9,32),
+                            new THREE.MeshBasicMaterial({color: 0xffffff,
+                                                         side: THREE.DoubleSide}));
+circle.rotation.x = -Math.PI/2;
+scene.add(circle);
+
+var ambLight = new THREE.AmbientLight(0xffffff, 0.8);
+scene.add(ambLight);
+
+// set camera parameters 
+var cameraParams = {
+    near: 0.1,        // reduced, to see things very close to camera
+    far: 100,
+    fov: 75,                // degrees
+    aspectRatio: 800/500,   // from dimensions of the canvas, see CSS
+    atX: 0,
+    atY: 0,
+    atZ: 0,           
+    eyeX: 0,        
+    eyeY: 3,
+    eyeZ: 25,
+    upX: 0,
+    upY: 1,
+    upZ: 0
+};
+
+// create a function to create a camera with the desired parameters
+function setupCamera (cameraParameters) {
+    /* creates a camera and adds desired parameters */
+    // set up an abbreviation 
+    var cp = cameraParameters;
+    // create an initial camera with the desired shape
+    var camera = new THREE.PerspectiveCamera(cp.fov, cp.aspectRatio, cp.near, cp.far);
+    // set the camera location and orientation
+    camera.position.set(cp.eyeX, cp.eyeY, cp.eyeZ);
+    camera.up.set(cp.upX, cp.upY, cp.upZ);
+    camera.lookAt(new THREE.Vector3(cp.atX, cp.atY, cp.atZ));
+    return camera;
+}
+
+// create renderer
+var renderer = new THREE.WebGLRenderer();
+
+TW.mainInit(renderer,scene);
+
+// add camera to scene
+var camera = setupCamera(cameraParams);
+scene.add(camera);
+
+function render() {
+    // a render function; assume global variables scene, renderer, and camera
+    renderer.render(scene,camera);
+}
+render();
+
+// Write functions to transition cameras to specific Winter Town Views
+
+// create variable to keep track of view number
+var viewNum = 0; // set initially to 0
+
+function view1() {
+    /* changes camera view to Winter Town View 1 */
+    viewNum = 1; // set view to 1
+    //concatenate view name
+    document.getElementById('view').innerHTML= "Winter Town View " + viewNum;
+    // set fov and recreate camera
+    cameraParams.fov = 35; 
+    camera = setupCamera(cameraParams);
+    // change camera parameters
+    camera.position.set(0,6,25);
+    camera.up.set(0, 1, 0);
+    camera.lookAt(new THREE.Vector3(0, 1, 0));
+    render();
+}
+// implement keyboard callback, calling view1() function
+TW.setKeyboardCallback( "1", view1, "Winter Town View 1");
+
+function view2() {
+    /* changes camera view to Winter Town View 2 */
+    viewNum = 2; // set view to 2
+    //concatenate view name
+    document.getElementById('view').innerHTML= "Winter Town View " + viewNum;
+    // change camera parameters
+    cameraParams.fov = 49;
+    camera = setupCamera(cameraParams);
+    camera.position.set(10,10,-20); // look from behind
+    camera.up.set(0, 1, 0); 
+    camera.lookAt(new THREE.Vector3(4,6.75,0));
+    render();
+}
+// implement keyboard callback, calling view2() function
+TW.setKeyboardCallback( "2", view2, "Winter Town View 2");
+
+function view3() {
+    /* changes camera view to Winter Town View 3 */
+    viewNum = 3; // set view to 3
+    //concatenate view name
+    document.getElementById('view').innerHTML= "Winter Town View " + viewNum;
+    // set fov and recreate camera
+    cameraParams.fov = 45;
+    camera = setupCamera(cameraParams);
+    // change camera parameters
+    camera.position.set(0,25,0); // looking from above
+    camera.up.set(0, 0, 1); // turn camera to look "upside down"
+    camera.lookAt(new THREE.Vector3(0, 1, 0));
+    render();
+}
+// implement keyboard callback, calling view3() function
+TW.setKeyboardCallback( "3", view3, "Winter Town View 3");
+
+// Additional Features
+
+// Add Winter Town View 4: Looking at the town from behind, from afar
+function view4() {
+    /* changes camera view to Winter Town View 4 */
+    viewNum = 4; // set view to 4
+    //concatenate view name
+    document.getElementById('view').innerHTML= "Winter Town View " + viewNum;
+    // set fov and recreate camera
+    cameraParams.fov = 70;
+    camera = setupCamera(cameraParams);
+    // change camera parameters
+    camera.position.set(0,5,-30); // look from behind
+    camera.up.set(0, 1, 0); 
+    camera.lookAt(new THREE.Vector3(0, 1, 0));
+    render();
+}
+// implement keyboard callback, calling view4() function
+TW.setKeyboardCallback( "4", view4, "Winter Town View 4");
+
+// Add Winter Town View 5: Looking at the town upside-down from inside
+function view5() {
+    /* changes camera view to Winter Town View 5 */
+    viewNum = 5; // set view to 5
+    //concatenate view name
+    document.getElementById('view').innerHTML= "Winter Town View " + viewNum;
+    // set fov and recreate camera
+    cameraParams.fov = 70;
+    camera = setupCamera(cameraParams);
+    // change camera parameters
+    camera.position.set(0,2,10); 
+    camera.up.set(0, 0, 1); 
+    camera.lookAt(new THREE.Vector3(0, 1, 0));
+    render();
+}
+// implement keyboard callback, calling view5() function
+TW.setKeyboardCallback( "5", view5, "Winter Town View 5");
+
+
+</script>
+</body>
+</html>

@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>CS 307 Hwk 2: Clown</title>
+<style>
+      /* feel free to style the canvas any way you want. If you want it to
+      use the entire window, set width: 100% and height: 100%. */
+      
+      canvas {
+          display: block;
+          margin: 10px auto;
+          width: 80%;
+          height: 500px;
+      }
+      h1 {
+        color: purple;
+      }
+      h3 {
+          color: rgb(49, 0, 39);
+      }
+      p {
+        color: darkblue;
+      }
+      body {
+        background-color: rgb(255, 210, 217);
+        font-family: Arial, Helvetica, sans-serif;
+      }
+    </style>
+<script src="https://cs.wellesley.edu/~cs307/threejs/libs/three-r95.all.js">
+"https://cs.wellesley.edu/~cs307/threejs/libs/three-r80.min.js"
+</script>
+<!-- omit dat.gui and OrbitControls if you don't need them -->
+<script src="https://cs.wellesley.edu/~cs307/threejs/libs/OrbitControls-r95.js">
+"https://cs.wellesley.edu/~cs307/threejs/libs/OrbitControls-r80.js"
+</script>
+<script src="https://cs.wellesley.edu/~cs307/threejs/libs/tw-sp21.js">
+"https://cs.wellesley.edu/~cs307/threejs/libs/tw-fa18.js"
+</script>
+</head>
+<body>
+<h1>CS 307 Hwk 2: Clown</h1>
+<h3> Marisa Papagelis </h3>
+<p>
+    The main clown for this assignment is in the center of the scene (the largest one). 
+    <b>The main clown's origin is the origin of the scene.</b>
+</p>
+<p><b>Additional Features:</b> The main clown has three children! Navya, the eldest child on the left, followed by Lynsey (middle child) 
+    and Luiza (youngest child) on the right. The clowns are standing on some grass in a nearby park.</p>
+<p><i>Instructions to alter the clowns (body part size, color, remove a child clown, etc.) are provided in code documentation.</i></p>
+<script>
+// We always need a scene.
+var scene = new THREE.Scene();
+
+// Parameters that specify the geometrical structure of the clown
+// ** These parameters can be adjusted to change the size/length of the head, body, arms, and legs
+var params = {
+    armsLegsLength: 12, // length of arms and legs (all same size)
+    armsLegsRadius: 1, // radius of arms and legs (all same size)
+    headRadius: 6, // radius of head
+    bodyRadius: 8, // radius of body
+}
+
+// Colors and materials for the clown 
+// ** These variables can be changed to change the colors of the clown
+var blueMaterial = new THREE.MeshBasicMaterial({color: new THREE.Color("rgb(0,191,255)")}); // blue 
+var lightBlueMaterial = new THREE.MeshBasicMaterial({color: new THREE.Color("rgb(173,216,230)")}); // light blue 
+var purpleMaterial = new THREE.MeshBasicMaterial({color: new THREE.Color("rgb(75,0,130)")}); // indigo 
+var pinkMaterial = new THREE.MeshBasicMaterial({color: new THREE.Color("rgb(255,0,255)")}); // pink
+var greenMaterial = new THREE.MeshBasicMaterial({color: new THREE.Color("rgb(152,251,152)")}); // green
+var yellowMaterial = new THREE.MeshBasicMaterial({color: new THREE.Color("rgb(255,255,0)")}); // yellow
+
+
+// Functions to create body parts of the clown
+
+function createHead(headRadius) {
+    /* creates and returns a clown head object, with  a nose, left and right eyes, 
+    left and right ears, and a mouth. */
+	var head = new THREE.Object3D();
+
+    // create a sphere for the shape of the head
+	var headGeom = new THREE.SphereGeometry(headRadius, 10, 10);
+	var headMesh = new THREE.Mesh(headGeom, lightBlueMaterial);
+    head.add(headMesh);
+
+    // create and add a nose to the head
+	var noseGeom = new THREE.SphereGeometry(headRadius/12, 10, 10);
+	var noseMesh = new THREE.Mesh(noseGeom, purpleMaterial);
+    noseMesh.position.set(0, -headRadius/5, headRadius);
+    head.add(noseMesh);
+
+    // create and add left and right eyes to the head
+	var eyeGeom = new THREE.SphereGeometry(headRadius/10, 10, 10);
+    var eyeMeshL = new THREE.Mesh(eyeGeom, purpleMaterial);
+    var eyeMeshR = eyeMeshL.clone();
+    eyeMeshL.position.set(-headRadius/3, 0, headRadius);
+	eyeMeshR.position.set(headRadius/3, 0, headRadius);
+    head.add(eyeMeshL);
+    head.add(eyeMeshR);
+
+    // create and add left and right ears to the head
+	var earGeom = new THREE.SphereGeometry(headRadius/3, 10, 10);
+	var earMeshL = new THREE.Mesh(earGeom, purpleMaterial);
+    var earMeshR = earMeshL.clone();
+	earMeshL.position.set(headRadius, 0, 0)
+	earMeshR.position.set(-headRadius, 0, 0)
+    head.add(earMeshL);
+    head.add(earMeshR);
+
+    // create and add a mouth to the head
+	var mouthGeom = new THREE.TorusGeometry(headRadius/5, 0.03*headRadius, 10, 10, 5*Math.PI/6);
+	var mouthMesh = new THREE.Mesh(mouthGeom, pinkMaterial);
+    mouthMesh.position.set(0, -headRadius/3, 0.8*headRadius);
+	mouthMesh.rotation.set(Math.PI, 0, Math.PI/9);
+    head.add(mouthMesh);
+
+    // return the final head object
+	return head;
+	}
+
+function createLeg (legRadius, legLength) {
+    /* creates and returns an leg object with a foot */
+    var leg = new THREE.Object3D();
+
+    // create a cylinder to be the leg
+    var legGeom = new THREE.CylinderGeometry(legRadius, legRadius, legLength, 10, 10);
+    var legMesh = new THREE.Mesh(legGeom, pinkMaterial);
+    legMesh.position.y = -legLength/2;
+    leg.add(legMesh);
+
+    // create and add a foot to the leg 
+    var footGeom = new THREE.SphereGeometry(2.5*legRadius, 10, 10, 0, 2*Math.PI, 0, Math.PI/2);
+	var footMesh = new THREE.Mesh(footGeom, greenMaterial);
+    footMesh.position.y = -legLength;
+    leg.add(footMesh);
+
+    // return leg object
+    return leg;
+  }
+
+function createArm(armRadius, armLength) {
+    /* creates and returns an arm object with a shoulder and a hand */
+	var arm = new THREE.Object3D();
+
+    // create a cylinder to be the arm
+    var armGeom = new THREE.CylinderGeometry(armRadius, armRadius, armLength, 10);
+	var armMesh = new THREE.Mesh(armGeom, blueMaterial);
+    armMesh.position.y = -armLength/2;
+    arm.add(armMesh);
+
+    // create and add a hand to the arm
+	var handGeom = new THREE.SphereGeometry(1.5*armRadius, 10, 10);
+	var handMesh = new THREE.Mesh(handGeom, greenMaterial);
+	handMesh.position.y = -armLength;
+    arm.add(handMesh);
+
+    // create and add a shoulder to the arm 
+	var shoulderGeom = new THREE.SphereGeometry(2*armRadius, 10, 10);
+	var shoulderMesh = new THREE.Mesh(shoulderGeom, pinkMaterial);
+	arm.add(shoulderMesh);
+
+    // return arm object
+    return arm;
+  }
+
+  function createBody (radius, length, bodyRadius) {
+    /* creates and returns an body object with the legs and arms attached */
+	body = new THREE.Object3D();
+
+    // create the body
+    var bodyGeom = new THREE.SphereGeometry(bodyRadius, 10, 10);
+	var bodyMesh = new THREE.Mesh(bodyGeom, blueMaterial);
+	bodyMesh.scale.y = 1.3; // make the body oval
+	body.add(bodyMesh);
+
+    // create and add arms
+    var armL = createArm(radius, length);
+    var armR = armL.clone();
+    armL.position.set(-0.8*bodyRadius, bodyRadius, 0);
+    armR.position.set(0.8*bodyRadius, bodyRadius, 0);
+    armL.rotation.z = -Math.PI/4;
+    armR.rotation.z = Math.PI/4;
+    body.add(armL);
+    body.add(armR);
+
+    // create and add legs
+    var legL = createLeg(radius, length);
+    var legR = legL.clone();
+    legL.position.set(-bodyRadius/2, -bodyRadius, 0);
+    legR.position.set(bodyRadius/2, -bodyRadius, 0);
+    body.add(legL);
+    body.add(legR);
+
+    // return body object
+    return body;
+  }
+
+function createHat (headRadius) {
+/* creates and returns a hat object consisting of a cylinder and a disc */
+    var hat = new THREE.Object3D();
+
+    // first create cylinder
+    cylinderGeom = new THREE.CylinderGeometry(headRadius, 0.7*headRadius, headRadius, 10);
+    var cylinderMesh = new THREE.Mesh(cylinderGeom, blueMaterial);
+    cylinderMesh.position.set(0.15*headRadius, 1.3*headRadius, 0);
+    hat.add(cylinderMesh);
+
+    // second create disc
+    var discGeom = new THREE.CylinderGeometry(headRadius, 1.2*headRadius, 0.05*headRadius, 10, 10);
+    var discMesh = new THREE.Mesh(discGeom, blueMaterial);
+    discMesh.position.set(0.1*headRadius, 0.8*headRadius, 0);
+    hat.add(discMesh);
+
+    // return hat object
+    return hat;
+}
+
+function createOrigin (radius) {
+    /* creates and returns an origin object for the scene */
+    var origin = new THREE.Object3D();
+    var originGeom = new THREE.SphereGeometry(radius/2, 5, 5);
+    var originMesh = new THREE.Mesh(originGeom, yellowMaterial);
+    origin.add(originMesh);
+
+    // return origin object
+    return(origin);
+
+}
+
+function createClown (headRadius, bodyRadius, radius, length) {
+    /* creates and returns a clown object, with the head, body, hat and origin point */
+	var clown = new THREE.Object3D();
+
+    // create and add head 
+    var head = createHead(headRadius);
+    var position = headRadius + 2*bodyRadius + length // position on top of body + leg length + head radius
+    head.position.y = position; 
+    clown.add(head);
+
+    // create and add body 
+    var body = createBody(radius, length, bodyRadius);
+    var position = bodyRadius + length; // position on top of leg length + body radius
+    body.position.y = position;
+    clown.add(body);
+
+    // create and add hat
+    var hat = createHat(bodyRadius);
+    var position = 0.6*headRadius + 2*bodyRadius + length // position on top of body + leg length + partial head radius (lies slightly over head)
+    hat.position.y = position;
+    clown.add(hat);
+
+    // create and add origin
+    // origin point is at origin of scene (no additional positioning)
+    var origin = createOrigin(radius);
+    clown.add(origin);
+
+    // return clown object
+	return clown;
+	}
+
+// Create main clown and place in scene
+var clown = createClown(params.headRadius, params.bodyRadius, params.armsLegsRadius, params.armsLegsLength);
+scene.add(clown);
+
+// Additional Features 
+
+// Create additional clown children
+var clown2 = createClown(params.headRadius, params.bodyRadius, params.armsLegsRadius, params.armsLegsLength);
+clown2.position.set(20,0,15); // alter to change location of clown
+clown2.scale.set(0.5,0.5,0.5); // alter to change size of clown 
+scene.add(clown2); // comment line to remove clown
+
+var clown3 = createClown(params.headRadius, params.bodyRadius, params.armsLegsRadius, params.armsLegsLength);
+clown3.position.set(-20,0,15); // alter to change location of clown
+clown3.scale.set(0.65,0.65,0.65); // alter to change size of clown 
+scene.add(clown3); // comment line to remove clown
+
+var clown4 = createClown(params.headRadius, params.bodyRadius, params.armsLegsRadius, params.armsLegsLength);
+clown4.position.set(10,0,15); // alter to change location of clown
+clown4.scale.set(0.25,0.25,0.25); // alter to change size of clown 
+scene.add(clown4); // comment line to remove clown
+
+// Add grass to the scene
+var grass = new THREE.Mesh(new THREE.PlaneGeometry(60,40),
+new THREE.MeshBasicMaterial({color: new THREE.Color("green")})); // alter to change color of ground
+grass.position.set(0,0,0);
+grass.rotation.set(-Math.PI/2,0,0);
+scene.add(grass); // comment line to remove ground
+
+// We always need a renderer
+var renderer = new THREE.WebGLRenderer();
+
+TW.mainInit(renderer, scene);
+
+/* We always need a camera; here we'll use a default orbiting camera.  The
+third argument are the ranges for the coordinates, to help with setting up
+the placement of the camera. They need not be perfectly accurate, but if
+they are way off, your camera might not see anything, and you'll get a
+blank canvas. */
+
+// Set bounding box to fit main clown, children, and grass
+TW.cameraSetup(renderer,
+            scene,
+            {minx: -30, maxx: 30,
+            miny: 0, maxy: 47,
+            minz: -20, maxz: 20});
+
+</script>
+</body>
+</html>
