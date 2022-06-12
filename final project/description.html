@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>Fish Tank Races Description</title>
+<style>
+      /* feel free to style the canvas any way you want. If you want it to
+      use the entire window, set width: 100% and height: 100%. */
+      
+      canvas {
+          display: block;
+          margin: 10px auto;
+          width: 80%;
+          height: 500px;
+      }
+    </style>
+
+<h1>Fish Tank Races Description</h1>
+<h2>Marisa Papagelis, CS 307 Final Project</h2>
+
+<h2><a href="https://cs.wellesley.edu/~mpapagel/cs307-graphics-project-alpha/demo.html">Alpha Version</a></h2>
+
+<body>
+
+<h3>Overview:</h3>
+    <p>The goal of my project was to utilize computer graphics concepts learned from class to create a 3D, user-interactive game called Fish Tank Races. 
+        To play, the user will continuously press '+' to advance all three fish towarrds the finish line. Each frame advances each fish forward by a 
+        random integer value between 0 and 10, so the outcome of the race is unpredictable! The first fish to cross the finish line wins!
+</p>
+
+<img src="fish_tank_race1.png" alt="fish tank races start" height="200" width="350">
+<img src="fish_tank_race2.png" alt="fish tank races during" height="200" width="350">
+<img src="fish_tank_race3.png" alt="fish tank races finish" height="200" width="350">
+
+<h3>Inspiration:</h3>
+<p>I wanted to recreate some sort of user-interactive game where players could try to bet on who was going to win. I 
+    started with inspiration from the <a href="https://www.youtube.com/watch?v=SPcmYymGb30">Desktop Derby</a> game, and I added a twist to make it fish rather
+     than horses because I thought it would be fun to decorate a fish tank. I decided to add randomness to the game, 
+    so the user can bet which fish they think will win.
+</p>
+
+<h3> Graphics Concepts: </h3>
+
+<h4> 1. Modeling: </h4>
+<p> I used a variety of basic geometries, such as spheres, cones, and tori, as well as additional complex curves and surfaces, 
+    including Bezier curves and tubes, to model my fish tank scene. In doing so, I utlized hierarchical structuring to create 
+different levels of objects using meshes. Then, I built on top of simpler objects to create a more complex design. </p>
+
+<h4> 2. Material, Lighting, and Shading: </h4>
+<p> I used Phong material for the creation of the fish, finish line, and rocks, adding shininess, 
+    and specular properties where appropriate. For example, the rocks were set to be less shiny to give them 
+    a more rough appearance. For the fish tank itself, I used Basic material for texture mapping (to be discussed
+    later) and added the THREE.BackSide property to make only the inside of the fish tank visable at all angles.
+     </p>
+
+     <p>In terms of lighting, I used directional and ambient lights. The directional light is positioned
+        on top of and in front of the fish tank.  </p>
+
+<h4> 3. Camera: </h4>
+<p>N/A - Planning to work on for final version. [See next steps at bottom].</p>
+
+<h4> 4. Curved Lines or Surfaces: </h4>
+<p>I used Bezier curves to shape the finish line and the seaweed in my fish tank. I cloned and 
+    manipulated each seaweed blade, so they would appear in bunches within my scene.   
+    I used TubeRadialGeometry with increasing and decreasing radii throughout to give 
+    the finish line a 'hanging' effect as a loosely draped finish line would look like.  </p>
+
+    <img src="fish_tank_race5.png" alt="finish line" height="200" width="200">
+    <img src="fish_tank_race8.png" alt="seaweed" height="200" width="200">
+
+<h4> 4. Textures and Texture-Mapping: </h4>
+<p> I used loaded images to texture map the interior of the fish tank. The fish tank itself 
+    uses a water pattern with repeat wrapping to give a continuous water flowing effect. For simplicity, the sand (floor) 
+and celebration wall of the tank were created using texture-mapped one-sided planes positioned directly on top of their 
+respective surfaces. The sand uses mirror repeated wrapping to create smooth water ripples in the sand. The celebration wall 
+uses repeat wrapping in order to preserve the image of the celebration balloons.    </p>
+
+<img src="water1.jpg" alt="water texture" height="200" width="200">
+<img src="sand1.jpg" alt="sand texture" height="200" width="200">
+<img src="balloons1.jpg" alt="balloons texture" height="200" width="200">
+
+<h4> 5. Transparency: </h4>
+<p>N/A - Planning to work on for final version. [See next steps at bottom].</p>
+
+<h4> 7. User Interaction: </h4>
+<p> User interaction is the central component of my project, and it can be implemented on many levels. First and foremost, 
+    Fish Tank Races is a 3D user-interactive game. As described in the overview, the user can continuously press '+' in order 
+    to advance the fish towards the finish line. With each press, the fish advance forward by a random integer value 
+    between 0 and 10, so the outcome of the race is unpredictable. This ability was implemented through a function I created 
+    called moveFish() which can be called using TW.setKeyboardCallback() and increments the x-position of each fish by a random 
+    integer selected using Math.random(). When each fish passes the finish line, it will remain there until the others finish,
+    so it doesn't swim outside of the tank. Once the first fish passes the finish line, text announcing the winner will appear on 
+    the back wall of the fish tank. This text was implemented using a font loader and text geometry. [Reference images in Overview 
+    section].
+</p>
+
+<code>// call moveFish() function each time + is pressed</code>
+<br>
+<code>TW.setKeyboardCallback('+', moveFish, "move fish forward");</code>
+<br>
+<br>
+<code>// each fish advances by a random integer value between 0-10</code>
+<br>
+<code> sceneParams.fishX = sceneParams.fishX + Math.floor(Math.random() * 11);</code>
+<br>
+    <code>  sceneParams.fish2X = sceneParams.fish2X + Math.floor(Math.random() * 11);</code>
+    <br>
+        <code>  sceneParams.fish3X = sceneParams.fish3X + Math.floor(Math.random() * 11);</code>
+
+
+<p> Additionally, the fish tank itself is a 3D object which can be moved around and zoomed-in on using the mouse. The interior 
+    of the fish tank can be viewed from any angle imaginable, and the user-interactive game can be played at any angle of view. 
+</p>
+
+<img src="fish_tank_race4.png" alt="fish tank side view" height="200" width="300">
+<img src="fish_tank_race6.png" alt="fish tank back view" height="200" width="200">
+<img src="fish_tank_race7.png" alt="fish tank top reverse view" height="200" width="350">
+<img src="fish_tank_race5.png" alt="fish tank front view" height="200" width="200">
+
+<h3> Challenges:</h3>
+<p>I faced many challenges in implementing the user-interactive component of my project. My moveFish() function, which advances the fish
+    forward by random amounts had many tasks to fufill. First, when called, the function needed to move the x-position forward by a random 
+    integer value between 0-10. In order to implement this, I needed to create a new function addFish() which takes in nine global input variables
+    (corresponding to each fishes x,y,z position coordinates) and calls createFish() (my function to create a fish) three times. This replaced my original
+    design of simply calling createFish() three times and hard-coding the starting position of each fish. With new global variables of each fishes position, 
+    the fishes x-position could be incremented randomly with each key press.</p>
+    <p>Next, I faced many challenges in figuring out how to deal with the winning fish.
+     I wanted all of the fish to be able to cross the finish line without further ahead fish swimming through the boundary of the fish tank, so I created some 
+     if statements to keep each fish at the finish line once they reached it. I defined crossing the finish line as when the origin of the head of the fish
+     crossed the x-position of the finish line. </p>
+     <p> I wanted to add text with the winner of the race, but I only wanted the text to appear
+     once the first fish crossed the finish line, so I had to create a function that loaded the text and could be called once the first fish crossed. 
+    At first, the text would reload each time a new fish crossed the finish line, with the most recent fish that crossed decleared as winner, even through
+    that wasn't true. To fix this, I created an empty array called results outside of the moveFish() function. Each 
+    time a new fish crossed the finish line, I pushed the fishes corresponding number into the array. When the text function was called, I indexed results[0], which is the first value in the array, and concatenated it
+    with the text in order to display only the number of the winning fish. The second and third fish are in the results array (results[1] and results[2]), but they are not used in this project (yet?).</p>
+
+<h3> Next Steps (For Final Version):</h3>
+<p> For the final version of the project, I hope to implement the following:  </p>
+    <ul>
+  <li>Add distinctive text to either the fish or the starting wall to show which fish is fish 1, fish 2, and fish 3. </li>
+  <li>Create some sort of scoreboard displaying the full results (first place, second place, third place).</li>
+  <li>Implement preset camera angles for viewing, that can be activated through a keyboard press. </li>
+  <li>Add transparency to the fish bubbles to make a more realistic bubble appearance. </li>
+</ul>
+
+
+
+</body>
+</html>
