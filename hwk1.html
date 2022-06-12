@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>CS 307 Hwk 1: Obelisk</title>
+<style>
+      /* feel free to style the canvas any way you want. If you want it to
+      use the entire window, set width: 100% and height: 100%. */
+      
+      canvas {
+          display: block;
+          margin: 10px auto;
+          width: 80%;
+          height: 500px;
+      }
+      h1 {
+        color: purple;
+      }
+      p {
+        color: darkblue;
+      }
+      body {
+        background-color: lightblue;
+        font-family: Arial, Helvetica, sans-serif;
+      }
+    </style>
+<script src="https://cs.wellesley.edu/~cs307/threejs/libs/three-r95.all.js">
+"https://cs.wellesley.edu/~cs307/threejs/libs/three-r80.min.js"
+</script>
+<!-- omit dat.gui and OrbitControls if you don't need them -->
+<script src="https://cs.wellesley.edu/~cs307/threejs/libs/OrbitControls-r95.js">
+"https://cs.wellesley.edu/~cs307/threejs/libs/OrbitControls-r80.js"
+</script>
+<script src="https://cs.wellesley.edu/~cs307/threejs/libs/dat.gui-r95.js">
+"https://cs.wellesley.edu/~cs307/threejs/libs/dat.gui-r80.min.js"
+</script>
+<script src="https://cs.wellesley.edu/~cs307/threejs/libs/tw-sp21.js">
+"https://cs.wellesley.edu/~cs307/threejs/libs/tw-fa18.js"
+</script>
+</head>
+<body>
+<h1>CS 307 Hwk 1: Obelisk</h1>
+<h3> Marisa Papagelis </h3>
+<p>Use the GUI to alter the dimensions of the Obelisk OR close GUI controls and utilize the <b>Keyboard Controls</b></p>
+<p><b>Keyboard Controls:</b> + or - to grow or shrink the base; ( or ) to grow/shrink the pyramidion; > or < to grow/shrink the base width; ] or [ to grow/shrink the top width</or></p>
+
+<script>
+// Create scene 
+var scene = new THREE.Scene();
+
+// Set Obelisk parameters 
+var sceneParams = { 
+   baseWidth: 55, // width of the base
+   topWidth: 34, // width of each side at the top
+   pyramidHeight: 55, // height of the pyramidion 
+   baseHeight: 500, // height of base of obelisk
+}
+
+// Function to create a Geometry with an obelisk centered at (0,0)
+
+function createObelisk(baseWidth, topWidth, pyramidHeight, baseHeight) {
+  var geom = new THREE.Geometry(); // initial Geometry object
+
+  // add the base
+  geom.vertices.push(new THREE.Vector3(-baseWidth/2, 0, -baseWidth/2));
+  geom.vertices.push(new THREE.Vector3(-baseWidth/2, 0, baseWidth/2));
+  geom.vertices.push(new THREE.Vector3(baseWidth/2, 0, baseWidth/2));
+  geom.vertices.push(new THREE.Vector3(baseWidth/2, 0, -baseWidth/2));
+
+  // add the top pyramidion
+  var wholeHeight = baseHeight + pyramidHeight // height of the base plus the pyramid
+  geom.vertices.push(new THREE.Vector3(-topWidth/2, baseHeight, -topWidth/2));
+  geom.vertices.push(new THREE.Vector3(-topWidth/2, baseHeight, topWidth/2));
+  geom.vertices.push(new THREE.Vector3(topWidth/2, baseHeight, topWidth/2));
+  geom.vertices.push(new THREE.Vector3(topWidth/2, baseHeight, -topWidth/2));
+
+  // add the point at top of pyramid 
+  geom.vertices.push(new THREE.Vector3(0, wholeHeight, 0));
+
+  // from the vertices, we can define the faces
+
+  // faces on pyramidion
+  geom.faces.push(new THREE.Face3(5,6,8)); // face 1
+  geom.faces.push(new THREE.Face3(6,7,8)); // face 2
+  geom.faces.push(new THREE.Face3(7,4,8)); // face 3
+  geom.faces.push(new THREE.Face3(4,5,8)); // face 4
+
+  // faces on base
+  geom.faces.push(new THREE.Face3(0,1,5)); // face 1
+  geom.faces.push(new THREE.Face3(0,5,4)); // face 1
+  geom.faces.push(new THREE.Face3(1,2,6)); // face 2
+  geom.faces.push(new THREE.Face3(1,6,5)); // face 2
+  geom.faces.push(new THREE.Face3(2,3,7)); // face 3
+  geom.faces.push(new THREE.Face3(2,7,6)); // face 3
+  geom.faces.push(new THREE.Face3(3,0,4)); // face 4
+  geom.faces.push(new THREE.Face3(3,4,7)); // face 4
+
+  // return obelisk Geometry
+  return geom; 
+}
+
+// function to create the mesh for the Obelisk
+function createMesh(mesh) {
+// array of materials to use for the faces of the Obelisk Geometry
+var colorMaterials = [new THREE.MeshBasicMaterial({color: new THREE.Color("rgb(255, 192, 203)"), // pink
+                                                    }),
+                      new THREE.MeshBasicMaterial({color: new THREE.Color("rgb(255,255,0)"), // yellow
+                                                    }),
+                      new THREE.MeshBasicMaterial({color: new THREE.Color("rgb(0,255,255)"), // cyan
+                                                    }),
+                      new THREE.MeshBasicMaterial({color: new THREE.Color("rgb(192,192,192)"), // silver
+                                                    }),
+                      new THREE.MeshBasicMaterial({color: new THREE.Color("rgb(0, 0, 255)"), // blue
+                                                    }),
+                      new THREE.MeshBasicMaterial({color: new THREE.Color("rgb(0, 0, 255)"), // blue
+                                                    }),
+                      new THREE.MeshBasicMaterial({color: new THREE.Color("rgb(0,128,0)"), // green
+                                                    }),
+                      new THREE.MeshBasicMaterial({color: new THREE.Color("rgb(0,128,0)"), // green
+                                                    }),
+                      new THREE.MeshBasicMaterial({color: new THREE.Color("rgb(0,0,128)"), // navy
+                                                    }),
+                      new THREE.MeshBasicMaterial({color: new THREE.Color("rgb(0,0,128)"), // navy
+                                                    }),
+                      new THREE.MeshBasicMaterial({color: new THREE.Color("rgb(255,0,0)"), // red
+                                                    }),
+                      new THREE.MeshBasicMaterial({color: new THREE.Color("rgb(255,0,0)"), // red
+                                                    })];
+return new THREE.Mesh(mesh, colorMaterials)
+}
+
+// function to place the obelisk in the scene 
+function placeObelisk (baseWidth, topWidth, pyramidHeight, baseHeight) {
+    obGeom = createObelisk(baseWidth, topWidth, pyramidHeight, baseHeight);
+    TW.setMaterialForFaces11(obGeom); // set material for faces
+    obMesh = createMesh(obGeom); // create mesh
+    scene.add(obMesh); // add to scene  
+}
+
+placeObelisk(sceneParams.baseWidth, sceneParams.topWidth, sceneParams.pyramidHeight, sceneParams.baseHeight)
+
+// ================================================================
+// 
+// We always need a renderer
+
+var renderer = new THREE.WebGLRenderer();
+
+TW.mainInit(renderer,scene);
+
+/* We always need a camera; here we'll use a default orbiting camera.  The
+third argument are the ranges for the coordinates, to help with setting up
+the placement of the camera. They need not be perfectly accurate, but if
+they are way off, your camera might not see anything, and you'll get a
+blank canvas. */
+
+TW.cameraSetup(renderer,
+               scene,
+               {minx: -100, maxx: 100,
+                miny: 0, maxy: 1000,
+                minz: -100, maxz: 100});
+
+// add GUI controls
+
+// function to redraw the Obelisk using scene parameters 
+function redrawObelisk() { 
+  scene.remove(obMesh);
+  placeObelisk(sceneParams.baseWidth, sceneParams.topWidth, sceneParams.pyramidHeight, sceneParams.baseHeight);
+  TW.render();
+}
+
+// GUI controls 
+var gui = new dat.GUI();
+gui.add(sceneParams,'baseWidth',0,200).onChange(redrawObelisk); 
+gui.add(sceneParams,'topWidth',0,100).onChange(redrawObelisk);
+gui.add(sceneParams,'pyramidHeight',0,200).onChange(redrawObelisk);
+gui.add(sceneParams,'baseHeight',100,1000).onChange(redrawObelisk);
+
+// Additional Features 
+
+// add additional keyboard controls
+
+// function to grow the base height of the Obelisk
+function growObelisk() {
+    scene.remove(obMesh);
+    sceneParams.baseHeight = sceneParams.baseHeight + 10;
+    placeObelisk(sceneParams.baseWidth, sceneParams.topWidth, sceneParams.pyramidHeight, sceneParams.baseHeight);
+    TW.render();
+}
+TW.setKeyboardCallback('+', growObelisk, "taller obelisk");
+
+// function to shrink the base height of the Obelisk
+function shrinkObelisk() {
+    scene.remove(obMesh);
+    sceneParams.baseHeight = sceneParams.baseHeight - 10;
+    placeObelisk(sceneParams.baseWidth, sceneParams.topWidth, sceneParams.pyramidHeight, sceneParams.baseHeight);
+    TW.render();
+}
+TW.setKeyboardCallback('-', shrinkObelisk, "shorter obelisk");
+
+// function to grow the pyramidion
+function growPyramid() {
+    scene.remove(obMesh);
+    sceneParams.pyramidHeight = sceneParams.pyramidHeight + 10;
+    placeObelisk(sceneParams.baseWidth, sceneParams.topWidth, sceneParams.pyramidHeight, sceneParams.baseHeight);
+    TW.render();
+}
+TW.setKeyboardCallback('(', growPyramid, "taller pyramid"); // keyboard control
+
+// function to shrink the pyramidion
+function shrinkPyramid() {
+    scene.remove(obMesh);
+    sceneParams.pyramidHeight = sceneParams.pyramidHeight - 10;
+    placeObelisk(sceneParams.baseWidth, sceneParams.topWidth, sceneParams.pyramidHeight, sceneParams.baseHeight);
+    TW.render();
+}
+TW.setKeyboardCallback(')', shrinkPyramid, "shorter pyramid");
+
+// function to grow the base width of the Obelisk
+function growBase() {
+    scene.remove(obMesh);
+    sceneParams.baseWidth = sceneParams.baseWidth + 10;
+    placeObelisk(sceneParams.baseWidth, sceneParams.topWidth, sceneParams.pyramidHeight, sceneParams.baseHeight);
+    TW.render();
+}
+TW.setKeyboardCallback('>', growBase, "larger base");
+
+// function to shrink the base width of the Obelisk 
+function shrinkBase() {
+    scene.remove(obMesh);
+    sceneParams.baseWidth = sceneParams.baseWidth - 10;
+    placeObelisk(sceneParams.baseWidth, sceneParams.topWidth, sceneParams.pyramidHeight, sceneParams.baseHeight);
+    TW.render();
+}
+TW.setKeyboardCallback('<', shrinkBase, "smaller base");
+
+// function to grow the top width of the Obelisk
+function growTop() {
+    scene.remove(obMesh);
+    sceneParams.topWidth = sceneParams.topWidth + 10;
+    placeObelisk(sceneParams.baseWidth, sceneParams.topWidth, sceneParams.pyramidHeight, sceneParams.baseHeight);
+    TW.render();
+}
+TW.setKeyboardCallback(']', growTop, "larger top");
+
+// function to shrink the top width of the Obelisk 
+function shrinkTop() {
+    scene.remove(obMesh);
+    sceneParams.topWidth = sceneParams.topWidth - 10;
+    placeObelisk(sceneParams.baseWidth, sceneParams.topWidth, sceneParams.pyramidHeight, sceneParams.baseHeight);
+    TW.render();
+}
+TW.setKeyboardCallback('[', shrinkTop, "smaller top");
+
+</script>
+</p></body>
+</html>
+
